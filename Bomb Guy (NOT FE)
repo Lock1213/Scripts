@@ -1,0 +1,173 @@
+-- Made for No Reason
+-- This Its not FE Lil bro
+-- And Yes... You Can Boom yourself
+local player = game.Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Chat = game:GetService("Chat")
+local StarterGui = game:GetService("StarterGui")
+
+local tool = Instance.new("Tool")
+tool.Name = "Bomb"
+tool.RequiresHandle = true
+tool.CanBeDropped = false
+
+local handle = Instance.new("Part")
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 1, 1)
+handle.Color = Color3.fromRGB(100, 100, 100)
+handle.Material = Enum.Material.SmoothPlastic
+handle.Anchored = false
+handle.CanCollide = false
+handle.Parent = tool
+
+local mesh = Instance.new("SpecialMesh", handle)
+mesh.MeshId = "rbxassetid://6126889386"
+mesh.TextureId = "rbxassetid://6126889409"
+mesh.Scale = Vector3.new(0.1, 0.1, 0.1)
+mesh.MeshType = Enum.MeshType.FileMesh
+
+tool.Parent = backpack
+
+local function createExplosionEffect(pos)
+	local explosion = Instance.new("Explosion")
+	explosion.Position = pos or handle.Position
+	explosion.BlastRadius = 0
+	explosion.BlastPressure = 0
+	explosion.DestroyJointRadiusPercent = 0
+	explosion.Parent = workspace
+end
+
+local function createBloodParticles(torso)
+	
+	local bloodTextures = {
+		"rbxassetid://8903193182",  
+		"rbxassetid://8903193182", 
+		"rbxassetid://11890766147", 
+	}
+
+	for _, textureId in ipairs(bloodTextures) do
+		local blood = Instance.new("ParticleEmitter")
+		blood.Texture = textureId
+		blood.Rate = 300
+		blood.Lifetime = NumberRange.new(0.7, 1.2)
+		blood.Speed = NumberRange.new(4, 10)
+		blood.VelocitySpread = 360
+		blood.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
+		blood.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.6),
+			NumberSequenceKeypoint.new(0.5, 0.4),
+			NumberSequenceKeypoint.new(1, 0)
+		})
+		blood.Drag = 1.5
+		blood.Rotation = NumberRange.new(0, 360)
+		blood.RotSpeed = NumberRange.new(-180, 180)
+		blood.Parent = torso
+		blood.Enabled = true
+		blood:Emit(100)
+
+		game.Debris:AddItem(blood, 3)
+	end
+end
+
+local function sayBubble(text)
+	local char = player.Character
+	if not char then return end
+	local head = char:FindFirstChild("Head")
+	if not head then return end
+	Chat:Chat(head, text, Enum.ChatColor.Red)
+end
+
+local function explode(targetHandle)
+	local char = player.Character
+	local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+	local part = targetHandle or handle
+
+	local beep = Instance.new("Sound", part)
+	beep.SoundId = "rbxassetid://6992631696"
+	beep.Volume = 1
+	beep:Play()
+
+	beep.Ended:Connect(function()
+		createExplosionEffect(part.Position)
+
+		local boom = Instance.new("Sound", part)
+		boom.SoundId = "rbxassetid://7128851174"
+		boom.Volume = 3
+		boom:Play()
+
+		
+		if part == handle and humanoid then
+			local head = char:FindFirstChild("Head")
+			local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+
+			if head then
+				head:Destroy()
+			end
+
+			if torso then
+				createBloodParticles(torso) 
+			end
+
+			task.delay(0.3, function()
+				humanoid.Health = 0
+			end)
+
+			task.delay(2, function()
+				if tool then tool:Destroy() end
+			end)
+		else
+			game.Debris:AddItem(part, 2)
+		end
+	end)
+end
+
+local bombArmed = false
+
+RunService.RenderStepped:Connect(function()
+	if bombArmed and tool.Parent ~= player.Character then
+		tool.Parent = player.Character
+	end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.Q and tool.Parent == player.Character then
+		if not bombArmed then
+			bombArmed = true
+		end
+
+		sayBubble("My Life Its Done... Goodbye...")
+
+		explode()
+	end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.E and tool.Parent == player.Character then
+		local clone = tool:Clone()
+		clone.Parent = workspace
+		local cloneHandle = clone:FindFirstChild("Handle")
+
+		if cloneHandle then
+			local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				cloneHandle.CFrame = hrp.CFrame * CFrame.new(0, 0, -3)
+				cloneHandle.Anchored = false
+				cloneHandle.CanCollide = true
+				cloneHandle.Velocity = hrp.CFrame.LookVector * 50
+				explode(cloneHandle)
+			end
+		end
+	end
+end)
+
+pcall(function()
+	StarterGui:SetCore("SendNotification", {
+		Title = "Bomb Script Executed!";
+		Text = "Made by Lock1213";
+		Duration = 5;
+	})
+end)
