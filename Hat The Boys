@@ -1,1 +1,3 @@
--gh 5555611932
+local texto = "-gh 5555611932"
+setclipboard(texto)
+Print("Hat Id Copied!")
